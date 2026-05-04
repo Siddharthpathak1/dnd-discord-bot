@@ -1,0 +1,17 @@
+{
+  "name": "dnd-discord-bot",
+  "version": "0.1.0",
+  "description": "Discord bot for running D&D campaigns (Roll20 + Beyond20 friendly)",
+  "main": "bot/index.js",
+  "scripts": {
+    "start": "node bot/index.js",
+    "dev": "nodemon bot/index.js",
+    "test": "node tests/run_tests.js"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "discord.js": "^14.11.0",
+    "dotenv": "^16.0.0"
+  }
+}
