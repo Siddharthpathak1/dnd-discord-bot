@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: tavern-master
+    env: node
+    region: iad
+    plan: free
+    branch: main
+    buildCommand: npm install
+    startCommand: npm start
+    env: {}
