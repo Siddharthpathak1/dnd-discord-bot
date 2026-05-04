@@ -1,0 +1,29 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Tavern Master Map Viewer</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div id="app">
+      <header>
+        <h1>Tavern Master — Map Viewer</h1>
+        <select id="mapSelect"></select>
+        <button id="toggleGrid">Toggle Grid</button>
+      </header>
+      <main>
+        <div id="mapWrap">
+          <img id="mapImage" src="" alt="map" />
+          <div id="tokens"></div>
+        </div>
+      </main>
+      <aside>
+        <h3>Recent Events</h3>
+        <div id="events"></div>
+      </aside>
+    </div>
+    <script src="app.js"></script>
+  </body>
+</html>
