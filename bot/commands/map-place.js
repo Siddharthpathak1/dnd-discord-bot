@@ -1,5 +1,6 @@
 const { SlashCommandBuilder } = require('discord.js');
 const maps = require('../../services/maps');
+const auth = require('../../services/auth');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -17,10 +18,12 @@ module.exports = {
     const y = interaction.options.getNumber('y');
     const image = interaction.options.getString('image') || null;
     try {
+      auth.ensureMapManager(interaction);
       const token = maps.placeToken(map, { ownerId: interaction.user.id, name, x, y, image });
       await interaction.reply({ content: `Placed token ${token.name} (id: ${token.id}) at ${x},${y}`, ephemeral: true });
-    } catch (e) {
-      await interaction.reply({ content: 'Error placing token: ' + e.message, ephemeral: true });
+    } catch (err) {
+      if (err && err.name === 'AuthError') return interaction.reply({ content: err.message, ephemeral: true });
+      await interaction.reply({ content: 'Error placing token: ' + err.message, ephemeral: true });
     }
   }
 };

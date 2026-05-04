@@ -29,6 +29,23 @@ async function ensureCampaignOwner(interaction, campaignNameOrId) {
 }
 
 /**
+ * Ensure the interaction user can manage maps.
+ * Allows server admins and users with DM or Dungeon Master roles.
+ */
+function ensureMapManager(interaction) {
+  try {
+    if (interaction.guild && interaction.member && interaction.member.permissions) {
+      if (interaction.member.permissions.has(PermissionFlagsBits.Administrator)) return true;
+    }
+  } catch (e) {
+    // ignore
+  }
+
+  if (memberHasRole(interaction, 'DM') || memberHasRole(interaction, 'Dungeon Master')) return true;
+  throw new AuthError('Only a server admin or DM can manage maps');
+}
+
+/**
  * Check if interaction member has a role with the given name.
  */
 function memberHasRole(interaction, roleName) {
@@ -36,4 +53,4 @@ function memberHasRole(interaction, roleName) {
   return interaction.member.roles.cache.some(r => r.name === roleName);
 }
 
-module.exports = { ensureCampaignOwner, memberHasRole, AuthError };
+module.exports = { ensureCampaignOwner, ensureMapManager, memberHasRole, AuthError };

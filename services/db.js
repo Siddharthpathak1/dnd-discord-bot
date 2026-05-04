@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const bus = require('./bus');
 
 const DB_PATH = path.join(__dirname, '..', 'data', 'db.json');
 
@@ -23,10 +24,10 @@ module.exports = {
     const db = read();
     return db.campaigns;
   },
-  createCampaign(name, ownerId) {
+  createCampaign(name, ownerId, extra = {}) {
     const db = read();
     if (db.campaigns.find(c => c.name === name)) throw new Error('Campaign already exists');
-    const campaign = { id: Date.now().toString(), name, ownerId, players: [], initiative: [], notes: [], rolls: [], roles: {} };
+    const campaign = { id: Date.now().toString(), name, ownerId, players: [], initiative: [], notes: [], rolls: [], roles: {}, ...extra };
     db.campaigns.push(campaign);
     write(db);
     return campaign;
@@ -45,6 +46,7 @@ module.exports = {
     if (!campaign) throw new Error('Campaign not found');
     campaign.initiative.push(entry);
     write(db);
+    bus.broadcast('initiative.updated', { campaignId: campaign.id, initiative: campaign.initiative, currentTurnIndex: campaign.currentTurnIndex || 0 });
     return campaign.initiative;
   },
   advanceInitiative(campaignNameOrId) {
@@ -55,6 +57,7 @@ module.exports = {
     if (typeof campaign.currentTurnIndex !== 'number') campaign.currentTurnIndex = 0;
     campaign.currentTurnIndex = (campaign.currentTurnIndex + 1) % campaign.initiative.length;
     write(db);
+    bus.broadcast('initiative.updated', { campaignId: campaign.id, initiative: campaign.initiative, currentTurnIndex: campaign.currentTurnIndex });
     return { index: campaign.currentTurnIndex, entry: campaign.initiative[campaign.currentTurnIndex] };
   },
   clearInitiative(campaignNameOrId) {
@@ -64,6 +67,7 @@ module.exports = {
     campaign.initiative = [];
     campaign.currentTurnIndex = 0;
     write(db);
+    bus.broadcast('initiative.updated', { campaignId: campaign.id, initiative: [], currentTurnIndex: 0 });
     return campaign;
   },
   setHP(campaignId, userId, hp) {
@@ -154,5 +158,10 @@ module.exports = {
     const campaign = this.getCampaign(campaignNameOrId);
     if (!campaign) throw new Error('Campaign not found');
     return (campaign.roles || {})[userId] || null;
+  },
+  getInitiative(campaignNameOrId) {
+    const campaign = this.getCampaign(campaignNameOrId);
+    if (!campaign) throw new Error('Campaign not found');
+    return { initiative: campaign.initiative || [], currentTurnIndex: campaign.currentTurnIndex || 0 };
   }
 };

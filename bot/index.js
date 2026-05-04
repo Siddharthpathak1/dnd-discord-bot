@@ -2,6 +2,7 @@ require('dotenv').config();
 const fs = require('fs');
 const path = require('path');
 const { Client, GatewayIntentBits, Collection, REST, Routes } = require('discord.js');
+const db = require('../services/db');
 
 const token = process.env.DISCORD_TOKEN;
 const clientId = process.env.CLIENT_ID;
@@ -74,8 +75,44 @@ try {
   const express = require('express');
   const app = express();
   const PORT = process.env.PORT || 3000;
+  // Serve health + static web UI for map viewer
   app.get('/health', (req, res) => res.send({ status: 'ok', uptime: process.uptime() }));
-  app.get('/', (req, res) => res.send('DND Discord Bot is running'));
+  app.use(express.json());
+  app.use(express.static(path.join(__dirname, 'web')));
+
+  // Simple Server-Sent Events (SSE) endpoint for map events
+  const bus = require('../services/bus');
+  app.get('/events', (req, res) => {
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders();
+    const client = res;
+    bus.addClient(client);
+    req.on('close', () => bus.removeClient(client));
+  });
+
+  // Basic API to fetch maps and tokens
+  const maps = require('../services/maps');
+  app.get('/api/maps', (req, res) => res.json(maps.listMaps()));
+  app.get('/api/maps/:id', (req, res) => {
+    try {
+      res.json(maps.getMap(req.params.id));
+    } catch (e) {
+      res.status(404).json({ error: e.message });
+    }
+  });
+
+  app.get('/api/campaigns', (req, res) => res.json(db.listCampaigns()));
+  app.get('/api/campaigns/:id/initiative', (req, res) => {
+    try {
+      res.json(db.getInitiative(req.params.id));
+    } catch (e) {
+      res.status(404).json({ error: e.message });
+    }
+  });
+
+  app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'web', 'index.html')));
   app.listen(PORT, () => console.log(`Health server listening on ${PORT}`));
 } catch (e) {
   // express not installed; health server is optional

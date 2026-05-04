@@ -13,7 +13,8 @@ module.exports = {
         { name: 'Rolling', value: '/roll <expr> [mode] [campaign] — roll dice (e.g. 2d6+3)\n/roll-history <campaign> — view recent rolls', inline: false },
         { name: 'Combat & Tracking', value: '/initiative <campaign> [value] — add or show initiative\n/initiative-advance <campaign> — DM-only advance initiative\n/initiative-clear <campaign> — DM-only clear initiative\n/hp <campaign> [value] — set or show your HP', inline: false },
         { name: 'Conditions & Players', value: '/condition-add/remove/list — manage player conditions (add/remove DM-only)\n/list-players <campaign> — list players and their HP/conditions', inline: false },
-        { name: 'Admin & Export', value: '/export-campaign — DM-only export campaign JSON', inline: false }
+        { name: 'Visuals & Maps', value: '/map-create <name> <image> — create a viewer map\n/map-list — list maps\n/map-place /map-move /map-remove — manage tokens on the map', inline: false },
+        { name: 'Admin & Export', value: '/export-campaign — DM-only export campaign JSON\n/how-to-play — step-by-step guide', inline: false }
       )
       .setFooter({ text: 'Use the slash menu for parameter help • DM-only commands require campaign ownership or DM role' });
 

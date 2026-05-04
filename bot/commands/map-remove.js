@@ -1,5 +1,6 @@
 const { SlashCommandBuilder } = require('discord.js');
 const maps = require('../../services/maps');
+const auth = require('../../services/auth');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -11,10 +12,12 @@ module.exports = {
     const map = interaction.options.getString('map');
     const tokenId = interaction.options.getString('token');
     try {
+      auth.ensureMapManager(interaction);
       const token = maps.removeToken(map, tokenId);
       await interaction.reply({ content: `Removed token ${token.name}`, ephemeral: true });
-    } catch (e) {
-      await interaction.reply({ content: 'Error removing token: ' + e.message, ephemeral: true });
+    } catch (err) {
+      if (err && err.name === 'AuthError') return interaction.reply({ content: err.message, ephemeral: true });
+      await interaction.reply({ content: 'Error removing token: ' + err.message, ephemeral: true });
     }
   }
 };

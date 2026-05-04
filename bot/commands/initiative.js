@@ -12,14 +12,14 @@ module.exports = {
     const value = interaction.options.getInteger('value');
     try {
       if (value !== null) {
-        await db.addInitiative(campaign, { playerId: interaction.user.id, value });
+        await db.addInitiative(campaign, { playerId: interaction.user.id, playerName: interaction.user.username, value });
         return interaction.reply({ content: `Added initiative ${value} for ${interaction.user.username}`, ephemeral: false });
       }
       const campaigns = db.listCampaigns();
       const c = campaigns.find(x => x.id === campaign || x.name === campaign);
       if (!c) return interaction.reply({ content: 'Campaign not found', ephemeral: true });
       if (!c.initiative.length) return interaction.reply({ content: 'No initiative entries', ephemeral: true });
-      const lines = c.initiative.map(i => `${i.playerId}: ${i.value}`);
+      const lines = c.initiative.map((i, index) => `${index + 1}. ${i.playerName || i.playerId}: ${i.value}${c.currentTurnIndex === index ? ' <- current turn' : ''}`);
       return interaction.reply({ content: lines.join('\n'), ephemeral: false });
     } catch (err) {
       return interaction.reply({ content: `Error: ${err.message}`, ephemeral: true });

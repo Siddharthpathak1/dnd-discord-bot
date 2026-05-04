@@ -1,3 +1,61 @@
+# Tavern Master DND Bot
+
+Tavern Master is a Discord bot for running D&D sessions with campaign management, dice rolls, initiative, HP, conditions, role assignment, and a lightweight visual map viewer.
+
+## Features
+
+- Campaign creation and join flow
+- Dice rolling with advantage/disadvantage support
+- Initiative, HP, conditions, roll history, and export
+- Self-select or DM-assigned roles
+- Free-hosted web map viewer with live token updates
+- Starter campaign content for `Lumenreach Depths`
+
+## Commands
+
+- `/create-campaign <name>` create a campaign
+- `/join-campaign <id|name>` join a campaign
+- `/role auto|choose <name?>` manage player roles
+- `/roll <expr> [mode] [campaign]` roll dice and optionally log to campaign
+- `/initiative <campaign> [value]` add or show initiative
+- `/initiative-advance <campaign>` advance the turn order
+- `/initiative-clear <campaign>` clear initiative
+- `/hp <campaign> [value]` set or show HP
+- `/condition-add`, `/condition-remove`, `/condition-list`
+- `/map-create`, `/map-list`, `/map-place`, `/map-move`, `/map-remove`
+- `/campaign-seed` seed the `Lumenreach Depths` starter campaign
+- `/how-to-play` step-by-step play guide
+- `/help-dnd` command reference
+
+## Visual Play Loop
+
+1. Create or seed a campaign.
+2. Open the bot web page in your browser to view maps and initiative.
+3. Create a map with `/map-create`.
+4. Place tokens with `/map-place` and move them with `/map-move`.
+5. Use `/initiative` and `/initiative-advance` during combat.
+
+## Starter Campaign: Lumenreach Depths
+
+A giant underground cavern was found near a village after a mining accident. Miners vanished, mutated creatures emerged, and the Order of the Gauntlet built an outpost in the depths. A ruined steampunk city lies below, full of automaton murder bots and dangerous cavern wilderness. Adventurers are hired to explore the depths, clear monster nests, and reclaim the ruins.
+
+## Run Locally
+
+```bash
+npm install
+npm start
+```
+
+## Environment Variables
+
+- `DISCORD_TOKEN`
+- `CLIENT_ID`
+- `GUILD_ID`
+- `PORT` (optional, defaults to 3000)
+
+## Hosting
+
+The project includes a Render-friendly health endpoint and a small web UI. Point UptimeRobot at `/health` to keep the service awake.
 # D&D Discord Bot (Roll20 + Beyond20 friendly)
 
 This is an MVP Discord bot to help run D&D games. It supports campaign creation, role assignment (auto or self-select), dice rolling, initiative tracking, and HP management. It is Roll20- and Beyond20-friendly; Roll20 Pro is required for deep API integration (optional).

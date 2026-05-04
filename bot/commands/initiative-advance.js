@@ -12,7 +12,8 @@ module.exports = {
     try {
       await auth.ensureCampaignOwner(interaction, campaign);
       const res = db.advanceInitiative(campaign);
-      return interaction.reply({ content: `Advanced initiative to index ${res.index}: ${JSON.stringify(res.entry)}`, ephemeral: false });
+      const entry = res.entry || {};
+      return interaction.reply({ content: `Advanced initiative to ${entry.playerName || entry.playerId || 'unknown'} (${entry.value})`, ephemeral: false });
     } catch (err) {
       if (err && err.name === 'AuthError') return interaction.reply({ content: err.message, ephemeral: true });
       return interaction.reply({ content: `Error: ${err.message}`, ephemeral: true });
