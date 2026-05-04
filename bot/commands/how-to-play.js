@@ -19,7 +19,8 @@ module.exports = {
         { name: '6) Combat Rolls', value: 'Use `/roll <expr> [mode] [campaign]` for attacks, damage, saves, and checks. Example modes include advantage and disadvantage.', inline: false },
         { name: '7) HP & Conditions', value: 'Set or view HP with `/hp <campaign> [value]`. Manage conditions with `/condition-add`, `/condition-remove`, and `/condition-list`.', inline: false },
         { name: '8) Table Tracking', value: 'View the last rolls with `/roll-history <campaign>`, check player status with `/list-players <campaign>`, and export campaign data with `/export-campaign` (DM-only).', inline: false },
-        { name: '9) Campaign Tools', value: 'DMs can create a starter game with `/campaign-seed lumenreach-depths`, then use `/help-dnd` for the command reference and `/how-to-play` for this walkthrough.', inline: false },
+        { name: '9) AI Content', value: 'Use `/ai-campaign` to generate a brand-new campaign, `/ai-trailer` for a cinematic trailer, and `/ai-character` for a level-based character sheet.', inline: false },
+        { name: '10) Campaign Tools', value: 'DMs can create a starter game with `/campaign-seed lumenreach-depths`, then use `/help-dnd` for the command reference and `/how-to-play` for this walkthrough.', inline: false },
         { name: 'Quick Examples', value: '`/roll 2d6+3` — damage\n`/roll 1d20 advantage` — attack with advantage\n`/initiative Lumenreach 14` — add initiative\n`/hp Lumenreach 18` — set HP to 18\n`/map-create Lumen1 https://.../cavern.jpg` — create a map', inline: false },
         { name: 'Starter Hook (use for your session)', value: 'Lumenreach Depths: Miners discovered a ruined steampunk city below the earth. Mutated creatures and automaton murder-bots threaten the surface. The Order established an outpost — they need adventurers to clear nests and reclaim the depths.', inline: false }
       )
