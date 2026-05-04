@@ -1,0 +1,47 @@
+{
+  "name": "Lumenreach Depths",
+  "summary": "An underground frontier campaign of ruins, mutated beasts, and steampunk automata.",
+  "hook": "A giant underground cavern was found near a small village in a mining accident. Miners went in and never returned. Then mutated creatures began crawling out of the mines and destroyed the village before the Order of the Gauntlet arrived and put down the aberrations that had reached the surface. Then they moved into the depths and set up an outpost which will be the beginner town/main hub for the party. They found a huge ruined city in the depths full of dangerous steampunk-style automaton murder bots and a bunch of cavernous wilderness filled with mutated creatures. The Order had their hands full holding back the monsters so they put out notices for adventurers to explore the city and wipe out monster nests. That's where the party comes in. They are on the way to the depths to fulfill that job.",
+  "regions": [
+    {
+      "name": "Gauntlet Outpost",
+      "type": "hub",
+      "notes": "Safe-ish base camp, quest board, merchants, and mission briefings."
+    },
+    {
+      "name": "The Shattered Sink",
+      "type": "wilds",
+      "notes": "Mutated cavern wildlife, flooded tunnels, and natural hazards."
+    },
+    {
+      "name": "The Brass Crypt",
+      "type": "ruins",
+      "notes": "Steampunk automation, trapped halls, and lost archives."
+    },
+    {
+      "name": "The Deep Reactor",
+      "type": "dungeon",
+      "notes": "A dangerous core chamber powering the old city and its defenses."
+    }
+  ],
+  "factions": [
+    {
+      "name": "Order of the Gauntlet",
+      "goal": "Contain the depths and send adventurers on clearing missions."
+    },
+    {
+      "name": "The Rust Choir",
+      "goal": "An automaton collective trying to reactivate the old city."
+    },
+    {
+      "name": "The Vein-Touched",
+      "goal": "Mutated cavern dwellers fighting for survival in the dark."
+    }
+  ],
+  "starterEncounters": [
+    "Escort a supply caravan from the outpost to a forward tunnel.",
+    "Clear a monster nest overrunning a crystal spring.",
+    "Investigate a brass sentinel that keeps returning after being destroyed.",
+    "Rescue miners trapped behind a collapse while something moves in the dark."
+  ]
+}

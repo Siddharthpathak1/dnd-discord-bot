@@ -1,7 +1,7 @@
 const { SlashCommandBuilder } = require('discord.js');
 const db = require('../../services/db');
 const auth = require('../../services/auth');
-const starter = require('../../data/campaigns/lumenreach-depths.json');
+const starter = require('../../starter-campaigns/lumenreach-depths.json');
 
 module.exports = {
   data: new SlashCommandBuilder()
