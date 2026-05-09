@@ -11,7 +11,12 @@ module.exports = {
     try {
       const players = db.listPlayers(campaign);
       if (!players.length) return interaction.reply({ content: 'No players in campaign.', ephemeral: true });
-      const lines = players.map(p => `${p.name || p.id} — HP: ${p.hp ?? 'unknown'} — Conditions: ${(p.conditions||[]).join(', ') || 'none'}`);
+      const lines = players.map(p => {
+        const xp = p.xp ?? 0;
+        const level = Math.floor(xp / 300) + 1;
+        const inventoryCount = (p.inventory || []).length;
+        return `${p.name || p.id} — HP: ${p.hp ?? 'unknown'} — XP: ${xp} (Lv ${level}) — Items: ${inventoryCount} — Conditions: ${(p.conditions||[]).join(', ') || 'none'}`;
+      });
       return interaction.reply({ content: lines.join('\n'), ephemeral: false });
     } catch (err) {
       return interaction.reply({ content: `Error: ${err.message}`, ephemeral: true });

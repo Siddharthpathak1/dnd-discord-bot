@@ -11,6 +11,7 @@ Tavern Master is a Discord bot for running D&D sessions with campaign management
 - Free-hosted web map viewer with live token updates
 - Starter campaign content for `Lumenreach Depths`
 - AI campaign generation, cinematic trailers, and character sheets
+- XP, inventory, quests, NPC dialogue, random encounters, session recaps, and titles
 
 ## Commands
 
@@ -25,6 +26,7 @@ Tavern Master is a Discord bot for running D&D sessions with campaign management
 - `/condition-add`, `/condition-remove`, `/condition-list`
 - `/map-create`, `/map-list`, `/map-place`, `/map-move`, `/map-remove`
 - `/ai-campaign`, `/ai-trailer`, `/ai-character`
+- `/xp`, `/inventory`, `/loot-add`, `/quest-board`, `/npc-create`, `/npc-talk`, `/random-encounter`, `/session-recap`, `/award-title`
 - `/campaign-seed` seed the `Lumenreach Depths` starter campaign
 - `/how-to-play` step-by-step play guide
 - `/help-dnd` command reference

@@ -27,7 +27,23 @@ module.exports = {
   createCampaign(name, ownerId, extra = {}) {
     const db = read();
     if (db.campaigns.find(c => c.name === name)) throw new Error('Campaign already exists');
-    const campaign = { id: Date.now().toString(), name, ownerId, players: [], initiative: [], notes: [], rolls: [], roles: {}, ...extra };
+    const campaign = {
+      id: Date.now().toString(),
+      name,
+      ownerId,
+      players: [],
+      initiative: [],
+      notes: [],
+      rolls: [],
+      roles: {},
+      quests: [],
+      npcs: [],
+      titles: [],
+      recaps: [],
+      inventory: {},
+      xp: {},
+      ...extra
+    };
     db.campaigns.push(campaign);
     write(db);
     return campaign;
@@ -36,7 +52,7 @@ module.exports = {
     const db = read();
     const campaign = db.campaigns.find(c => c.name === campaignName || c.id === campaignName);
     if (!campaign) throw new Error('Campaign not found');
-    if (!campaign.players.find(p => p.id === userId)) campaign.players.push({ id: userId, name: userName, hp: null, conditions: [] });
+    if (!campaign.players.find(p => p.id === userId)) campaign.players.push({ id: userId, name: userName, hp: null, conditions: [], xp: 0, inventory: [] });
     write(db);
     return campaign;
   },
@@ -79,6 +95,120 @@ module.exports = {
     player.hp = hp;
     write(db);
     return player;
+  },
+  setXP(campaignNameOrId, userId, xp) {
+    const db = read();
+    const campaign = db.campaigns.find(c => c.id === campaignNameOrId || c.name === campaignNameOrId);
+    if (!campaign) throw new Error('Campaign not found');
+    if (!campaign.xp) campaign.xp = {};
+    campaign.xp[userId] = xp;
+    const player = campaign.players.find(p => p.id === userId);
+    if (player) player.xp = xp;
+    write(db);
+    return xp;
+  },
+  addXP(campaignNameOrId, userId, amount) {
+    const db = read();
+    const campaign = db.campaigns.find(c => c.id === campaignNameOrId || c.name === campaignNameOrId);
+    if (!campaign) throw new Error('Campaign not found');
+    if (!campaign.xp) campaign.xp = {};
+    const current = Number(campaign.xp[userId] || 0);
+    const next = current + Number(amount || 0);
+    campaign.xp[userId] = next;
+    const player = campaign.players.find(p => p.id === userId);
+    if (player) player.xp = next;
+    write(db);
+    return next;
+  },
+  getXP(campaignNameOrId, userId) {
+    const campaign = this.getCampaign(campaignNameOrId);
+    if (!campaign) throw new Error('Campaign not found');
+    return Number((campaign.xp || {})[userId] || 0);
+  },
+  setInventory(campaignNameOrId, userId, items) {
+    const db = read();
+    const campaign = db.campaigns.find(c => c.id === campaignNameOrId || c.name === campaignNameOrId);
+    if (!campaign) throw new Error('Campaign not found');
+    if (!campaign.inventory) campaign.inventory = {};
+    campaign.inventory[userId] = items;
+    const player = campaign.players.find(p => p.id === userId);
+    if (player) player.inventory = items;
+    write(db);
+    return items;
+  },
+  addInventoryItem(campaignNameOrId, userId, item) {
+    const db = read();
+    const campaign = db.campaigns.find(c => c.id === campaignNameOrId || c.name === campaignNameOrId);
+    if (!campaign) throw new Error('Campaign not found');
+    if (!campaign.inventory) campaign.inventory = {};
+    if (!campaign.inventory[userId]) campaign.inventory[userId] = [];
+    campaign.inventory[userId].push(item);
+    const player = campaign.players.find(p => p.id === userId);
+    if (player) player.inventory = campaign.inventory[userId];
+    write(db);
+    return campaign.inventory[userId];
+  },
+  getInventory(campaignNameOrId, userId) {
+    const campaign = this.getCampaign(campaignNameOrId);
+    if (!campaign) throw new Error('Campaign not found');
+    return (campaign.inventory || {})[userId] || [];
+  },
+  addQuest(campaignNameOrId, quest) {
+    const db = read();
+    const campaign = db.campaigns.find(c => c.id === campaignNameOrId || c.name === campaignNameOrId);
+    if (!campaign) throw new Error('Campaign not found');
+    if (!campaign.quests) campaign.quests = [];
+    campaign.quests.push(quest);
+    write(db);
+    return campaign.quests;
+  },
+  getQuests(campaignNameOrId) {
+    const campaign = this.getCampaign(campaignNameOrId);
+    if (!campaign) throw new Error('Campaign not found');
+    return campaign.quests || [];
+  },
+  addNpc(campaignNameOrId, npc) {
+    const db = read();
+    const campaign = db.campaigns.find(c => c.id === campaignNameOrId || c.name === campaignNameOrId);
+    if (!campaign) throw new Error('Campaign not found');
+    if (!campaign.npcs) campaign.npcs = [];
+    campaign.npcs.push(npc);
+    write(db);
+    return campaign.npcs;
+  },
+  getNpcs(campaignNameOrId) {
+    const campaign = this.getCampaign(campaignNameOrId);
+    if (!campaign) throw new Error('Campaign not found');
+    return campaign.npcs || [];
+  },
+  addTitle(campaignNameOrId, title) {
+    const db = read();
+    const campaign = db.campaigns.find(c => c.id === campaignNameOrId || c.name === campaignNameOrId);
+    if (!campaign) throw new Error('Campaign not found');
+    if (!campaign.titles) campaign.titles = [];
+    campaign.titles.push(title);
+    write(db);
+    return campaign.titles;
+  },
+  getTitles(campaignNameOrId) {
+    const campaign = this.getCampaign(campaignNameOrId);
+    if (!campaign) throw new Error('Campaign not found');
+    return campaign.titles || [];
+  },
+  addRecap(campaignNameOrId, recap) {
+    const db = read();
+    const campaign = db.campaigns.find(c => c.id === campaignNameOrId || c.name === campaignNameOrId);
+    if (!campaign) throw new Error('Campaign not found');
+    if (!campaign.recaps) campaign.recaps = [];
+    campaign.recaps.push(recap);
+    if (campaign.recaps.length > 20) campaign.recaps = campaign.recaps.slice(-20);
+    write(db);
+    return campaign.recaps;
+  },
+  getRecaps(campaignNameOrId) {
+    const campaign = this.getCampaign(campaignNameOrId);
+    if (!campaign) throw new Error('Campaign not found');
+    return campaign.recaps || [];
   }
   ,
   logRoll(campaignNameOrId, entry) {

@@ -170,9 +170,94 @@ async function generateCharacter({ name, className, level, ancestry, background,
   return fallbackCharacter({ name, className, level, ancestry, background, tone });
 }
 
+async function generateNpcReply({ npc, message, campaignName }) {
+  const system = 'You speak as a tabletop RPG NPC. Output concise JSON only.';
+  const user = [
+    `Campaign: ${campaignName || 'Unknown'}`,
+    `NPC: ${npc?.name || 'Unnamed NPC'}`,
+    `Role: ${npc?.role || 'NPC'}`,
+    `Vibe: ${npc?.vibe || 'mysterious'}`,
+    `Player says: ${message}`,
+    'Return title and a single in-character reply line.'
+  ].join('\n');
+
+  try {
+    const result = await chatJson({
+      system,
+      user,
+      schemaHint: 'Expected keys: title, reply.'
+    });
+    if (result) return result;
+  } catch (error) {
+    // fall back below
+  }
+
+  return {
+    title: npc?.name || 'NPC',
+    reply: `${npc?.name || 'The NPC'} considers your words and says: "That may be so, but the depths have their own answer."`
+  };
+}
+
+async function generateEncounter({ campaignName, tone }) {
+  const system = 'You design random tabletop encounters. Output concise JSON only.';
+  const user = [
+    `Campaign: ${campaignName || 'Unknown'}`,
+    `Tone: ${tone || 'tense, cinematic'}`,
+    'Return title, encounter, complication, and reward.'
+  ].join('\n');
+
+  try {
+    const result = await chatJson({
+      system,
+      user,
+      schemaHint: 'Expected keys: title, encounter, complication, reward.'
+    });
+    if (result) return result;
+  } catch (error) {
+    // fall back below
+  }
+
+  return {
+    title: `Unexpected Trouble in ${campaignName || 'the Depths'}`,
+    encounter: 'A dangerous patrol, wild beast, or machine guardian blocks the party.',
+    complication: 'The battlefield is unstable and something else is listening.',
+    reward: 'Useful loot, clues, or a shortcut deeper into the dungeon.'
+  };
+}
+
+async function generateRecap({ campaignName, summary, recentEvents }) {
+  const system = 'You write short recap paragraphs for tabletop RPG sessions. Output concise JSON only.';
+  const user = [
+    `Campaign: ${campaignName || 'Unknown'}`,
+    `Summary: ${summary || ''}`,
+    `Recent events: ${recentEvents || ''}`,
+    'Return title, recap, and nextStep.'
+  ].join('\n');
+
+  try {
+    const result = await chatJson({
+      system,
+      user,
+      schemaHint: 'Expected keys: title, recap, nextStep.'
+    });
+    if (result) return result;
+  } catch (error) {
+    // fall back below
+  }
+
+  return {
+    title: `Previously on ${campaignName || 'the campaign'}`,
+    recap: `The party pushed forward through danger in ${campaignName || 'the depths'}, facing new threats and uncovering fresh clues.`,
+    nextStep: 'Pick up the next scene with a clear objective and one unexpected complication.'
+  };
+}
+
 module.exports = {
   isConfigured,
   generateCampaign,
   generateTrailer,
-  generateCharacter
+  generateCharacter,
+  generateNpcReply,
+  generateEncounter,
+  generateRecap
 };
