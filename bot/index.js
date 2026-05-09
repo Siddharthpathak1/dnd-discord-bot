@@ -46,6 +46,11 @@ async function registerCommands() {
         await rest.put(Routes.applicationGuildCommands(clientId, guildId), { body: commands });
       }
       console.log('Guild commands registered.');
+
+      console.log('Clearing global application (/) commands to avoid duplicates');
+      await rest.put(Routes.applicationCommands(clientId), { body: [] });
+      console.log('Global commands cleared.');
+      return;
     }
 
     console.log('Registering global application (/) commands');

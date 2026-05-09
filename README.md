@@ -60,7 +60,7 @@ npm start
 - `AI_BASE_URL` (optional, defaults to an OpenAI-compatible endpoint)
 - `AI_MODEL` (optional, defaults to `gpt-4o-mini`)
 
-If you want slash commands to appear immediately in a new server, invite the bot with both the `bot` and `applications.commands` scopes, then set `GUILD_ID` to that server ID or add it to `GUILD_IDS`. Global commands are also synced at startup, but Discord can take longer to propagate them.
+If you want slash commands to appear immediately in a new server, invite the bot with both the `bot` and `applications.commands` scopes, then set `GUILD_ID` to that server ID or add it to `GUILD_IDS`. When guild IDs are set, the bot syncs commands to those guilds and clears global commands so Discord does not show duplicates. If no guild IDs are set, it falls back to global command registration.
 
 ## AI Notes
 
