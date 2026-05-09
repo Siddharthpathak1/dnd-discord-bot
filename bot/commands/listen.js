@@ -2,6 +2,7 @@ const { SlashCommandBuilder } = require('discord.js');
 const db = require('../../services/db');
 const voiceListener = require('../../services/voiceListener');
 const voiceInterpreter = require('../../services/voiceInterpreter');
+const voiceContext = require('../../services/voiceContext');
 const bus = require('../../services/bus');
 
 module.exports = {
@@ -88,6 +89,20 @@ async function handleStartListening(interaction, campaignInput) {
     // Defer the response since joining voice can take a moment
     await interaction.deferReply({ ephemeral: false });
 
+    // Initialize campaign context (set up all players, NPCs, speaker tracking)
+    voiceInterpreter.initializeCampaignContext(campaign.id);
+    
+    // Broadcast party context to web viewers
+    const party = voiceContext.getPartyContext(campaign.id);
+    bus.broadcast('voice.campaign.initialized', {
+      campaignId: campaign.id,
+      campaignName: campaign.name,
+      playerCount: party.players.length,
+      npcCount: party.npcs.length,
+      players: party.players.map(p => ({ name: p.name, level: p.level, role: p.role })),
+      timestamp: new Date().toISOString()
+    });
+
     // Join voice channel
     const connection = await voiceListener.joinVoiceChannel(voiceChannel, campaign.id);
 
@@ -97,7 +112,23 @@ async function handleStartListening(interaction, campaignInput) {
         // Minimum transcript length
         if (transcribedText.length < 3) return;
 
-        console.log(`[${campaign.name}] ${userName}: ${transcribedText}`);
+        const speakerIdentifier = voiceContext.getSpeakerIdentifier(campaign.id, userId);
+        console.log(`[${campaign.name}] ${speakerIdentifier}: ${transcribedText}`);
+
+        // Get queue info
+        const queueSize = voiceContext.getQueueSize(campaign.id);
+        const queueNotice = queueSize > 0 ? ` (${queueSize} actions queued)` : '';
+
+        // Broadcast transcription to players with speaker context
+        bus.broadcast('voice.transcribed', {
+          campaignId: campaign.id,
+          userId,
+          userName,
+          speakerIdentifier,
+          text: transcribedText,
+          queuePosition: queueSize,
+          timestamp: new Date().toISOString()
+        });
 
         // Interpret the speech
         const action = await voiceInterpreter.interpretCombatAction(
@@ -106,16 +137,6 @@ async function handleStartListening(interaction, campaignInput) {
           userId,
           userName
         );
-
-        // Broadcast transcription to players
-        bus.broadcast('voice.transcribed', {
-          campaignId: campaign.id,
-          userId,
-          userName,
-          text: transcribedText,
-          confidence: 85, // Placeholder, would come from Deepgram
-          timestamp: new Date().toISOString()
-        });
 
         // Apply the combat action if valid
         if (action.action !== 'unclear' && action.action !== 'unknown') {
@@ -127,17 +148,20 @@ async function handleStartListening(interaction, campaignInput) {
           );
 
           if (result.applied) {
-            // Broadcast action results
+            // Broadcast action results with full context
             bus.broadcast('voice.action.applied', {
               campaignId: campaign.id,
               userId,
               userName,
+              speakerIdentifier,
               action: action.action,
+              rollExplanation: action.rollExplanation,
               narrative: action.narrative,
               results: result.results.map(r => ({
                 type: r.type,
                 target: r.target,
-                amount: r.amount
+                amount: r.amount,
+                rollExplanation: r.rollExplanation
               })),
               timestamp: new Date().toISOString()
             });
@@ -147,6 +171,7 @@ async function handleStartListening(interaction, campaignInput) {
               campaignId: campaign.id,
               userId,
               userName,
+              speakerIdentifier,
               narrative: action.narrative,
               timestamp: new Date().toISOString()
             });
@@ -162,11 +187,30 @@ async function handleStartListening(interaction, campaignInput) {
       }
     });
 
-    // Setup audio receiver (mock for now - real implementation would use stream)
-    // This is a simplified version; production would need proper audio processing
+    // Setup periodic status broadcasts
+    const statusInterval = setInterval(() => {
+      if (!voiceListener.isListeningTo(campaign.id)) {
+        clearInterval(statusInterval);
+        voiceContext.clearCampaign(campaign.id);
+        return;
+      }
+
+      const activeSpeakers = voiceContext.getActiveSpeakers(campaign.id);
+      bus.broadcast('voice.status', {
+        campaignId: campaign.id,
+        activeSpeakers: activeSpeakers.slice(0, 3).map(s => ({
+          name: s.userName,
+          role: s.role,
+          level: s.level,
+          lastSpokeAt: s.lastSpokeAt
+        })),
+        queueSize: voiceContext.getQueueSize(campaign.id),
+        timestamp: new Date().toISOString()
+      });
+    }, 30000); // Update every 30 seconds
 
     return interaction.editReply({
-      content: `🎤 **Started listening in ${voiceChannel.name} for campaign "${campaign.name}"**\n\n📝 Players can now speak naturally and actions will be interpreted automatically:\n- "I attack the goblin!" → auto-rolls attack and applies damage\n- "I heal the rogue!" → auto-applies healing\n- Damage/healing auto-deducts from HP\n- Defeated enemies auto-award XP\n\n✋ Type \`/listen stop\` when done.`
+      content: `🎤 **Started listening in ${voiceChannel.name} for campaign "${campaign.name}"**\n\n👥 **Party Tracking Active:**\n${party.players.map(p => `- ${p.name} (${p.role} Lv${p.level}): ${p.hp}/${p.maxHp} HP`).join('\n')}\n\n📝 **How It Works:**\n- Players speak naturally in voice chat\n- AI interprets their intent (attack/heal/spell/dodge)\n- Uses each player's stats and role to determine modifiers\n- Damage/healing auto-applies to HP\n- XP auto-awards with level-up detection\n- Queue handles multiple simultaneous actions\n\n✋ Type \`/listen stop\` when done.`
     });
   } catch (err) {
     console.error('Error starting listening:', err);
@@ -201,6 +245,7 @@ async function handleStopListening(interaction, campaignInput) {
     }
 
     voiceListener.leaveVoiceChannel(campaign.id);
+    voiceContext.clearCampaign(campaign.id); // Clean up context
 
     return interaction.reply({
       content: `🔇 Stopped listening in campaign "${campaign.name}"`

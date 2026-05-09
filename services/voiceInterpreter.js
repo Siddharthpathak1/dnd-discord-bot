@@ -1,10 +1,41 @@
 const ai = require('./ai');
 const db = require('./db');
+const voiceContext = require('./voiceContext');
 
 /**
  * Interpret player speech and determine game actions (damage, heal, XP, etc)
  * Uses AI to understand natural language commands and game context
  */
+
+/**
+ * Initialize party context for a campaign (call when listening starts)
+ * @param {string} campaignId
+ */
+function initializeCampaignContext(campaignId) {
+  try {
+    const campaign = db.getCampaign(campaignId);
+    if (!campaign) return;
+
+    // Set up all players and NPCs
+    voiceContext.setPartyContext(
+      campaignId,
+      campaign.players || [],
+      campaign.npcs || []
+    );
+
+    // Register all players as potential speakers
+    (campaign.players || []).forEach(player => {
+      voiceContext.registerSpeaker(campaignId, player.id, player.name, {
+        hp: player.hp,
+        xp: player.xp,
+        role: player.role,
+        class: player.class
+      });
+    });
+  } catch (err) {
+    console.error('Error initializing campaign context:', err.message);
+  }
+}
 
 /**
  * Parse player speech and determine combat actions
@@ -34,61 +65,27 @@ async function interpretCombatAction(transcribedText, campaignId, userId, userNa
       };
     }
 
-    // Build campaign context for AI
-    const otherPlayers = campaign.players
-      .filter(p => p.id !== userId)
-      .map(p => `- ${p.name}: HP ${p.hp || 100}, Level ${Math.floor((p.xp || 0) / 1000) + 1}`)
-      .join('\n');
+    // Register/update speaker with current stats
+    voiceContext.registerSpeaker(campaignId, userId, userName, {
+      hp: player.hp,
+      xp: player.xp,
+      role: player.role,
+      class: player.class
+    });
 
-    const npcs = (campaign.npcs || [])
-      .slice(0, 5)
-      .map(n => `- ${n.name}: ${n.role || 'NPC'}, HP ${n.hp || 30}`)
-      .join('\n');
+    // Queue the speech (handles multiple simultaneous speakers)
+    const queuePosition = voiceContext.queueSpeech(campaignId, userId, transcribedText);
 
-    // AI prompt for combat interpretation
-    const prompt = `You are a D&D Dungeon Master AI. A player just spoke in voice chat during combat.
-    
-PLAYER SPEECH: "${transcribedText}"
-PLAYER NAME: ${userName}
-PLAYER HP: ${player.hp || 100}
+    // Build rich AI prompt with party context and speaker stats
+    const prompt = voiceContext.buildAIPrompt(campaignId, userId, transcribedText);
 
-CAMPAIGN CONTEXT:
-Other Players:
-${otherPlayers || '(none)'}
-
-NPCs/Enemies:
-${npcs || '(none)'}
-
-TASK: Interpret the player's spoken intent and generate a D&D combat outcome.
-
-RULES:
-1. If player intends to ATTACK: generate a hit/miss (roll 1d20 vs AC 12 default)
-2. If player intends to HEAL: generate heal amount (1d8+2 typical for healing spell)
-3. If player intends to CAST SPELL: determine spell effect and damage/healing
-4. If player intends to DODGE/DEFEND: no damage dealt this turn
-5. If speech is unclear or OOC: respond with action: "unclear"
-
-DETERMINE:
-- action: "attack" | "heal" | "spell" | "dodge" | "unclear"
-- target: Name of enemy/player (or null if no valid target)
-- hit: true/false (only for attacks)
-- damage: 0-20 (only for attacks/spells that deal damage)
-- healing: 0-20 (only for heals/spells that restore HP)
-- critical: true/false (true if player rolled 20 or said "crit")
-- xpReward: 0-100 (only if enemy defeated)
-- narrative: 1-2 sentence description of what happens (max 100 chars)
-
-RETURN ONLY VALID JSON (no markdown, no explanation):
-{
-  "action": "attack|heal|spell|dodge|unclear",
-  "target": "enemy name or null",
-  "hit": true,
-  "damage": 8,
-  "healing": 0,
-  "critical": false,
-  "xpReward": 0,
-  "narrative": "Your sword strikes true! The goblin takes 8 damage."
-}`;
+    if (!prompt) {
+      return {
+        action: 'unknown',
+        narrative: 'Could not build combat context.',
+        error: 'Missing speaker context'
+      };
+    }
 
     // Call AI with combat context
     const aiResponse = await ai.generateResponse(prompt);
@@ -115,6 +112,12 @@ RETURN ONLY VALID JSON (no markdown, no explanation):
     result.critical = result.critical === true;
     result.xpReward = Math.max(0, result.xpReward || 0);
     result.narrative = (result.narrative || 'An action was taken.').substring(0, 150);
+    result.modifierUsed = result.modifierUsed || 'Unknown';
+    result.rollExplanation = result.rollExplanation || '';
+    result.queuePosition = queuePosition;
+
+    // Mark as processed
+    voiceContext.markSpeechProcessed(campaignId, queuePosition);
 
     return result;
   } catch (err) {
@@ -129,24 +132,31 @@ RETURN ONLY VALID JSON (no markdown, no explanation):
 
 /**
  * Determine who the player is attacking/healing based on name mention
+ * Uses party context for better accuracy
  * @param {string} targetName - Name mentioned in speech
- * @param {Array} players - Array of player objects
- * @param {Array} npcs - Array of NPC objects
+ * @param {string} campaignId
  * @returns {Object} { id, name, type: "player"|"npc"|"unknown" }
  */
-function resolveTarget(targetName, players, npcs) {
+function resolveTarget(targetName, campaignId) {
   if (!targetName) return { id: null, name: null, type: 'unknown' };
 
+  const party = voiceContext.getPartyContext(campaignId);
   const targetLower = targetName.toLowerCase();
 
-  // Check players
-  const playerMatch = players.find(p => p.name.toLowerCase().includes(targetLower));
+  // Check players (fuzzy match)
+  const playerMatch = party.players.find(p =>
+    p.name.toLowerCase().includes(targetLower) ||
+    targetLower.includes(p.name.toLowerCase().split(' ')[0])
+  );
   if (playerMatch) {
     return { id: playerMatch.id, name: playerMatch.name, type: 'player' };
   }
 
-  // Check NPCs
-  const npcMatch = npcs.find(n => n.name.toLowerCase().includes(targetLower));
+  // Check NPCs (fuzzy match)
+  const npcMatch = party.npcs.find(n =>
+    n.name.toLowerCase().includes(targetLower) ||
+    targetLower.includes(n.name.toLowerCase().split(' ')[0])
+  );
   if (npcMatch) {
     return { id: npcMatch.id, name: npcMatch.name, type: 'npc' };
   }
@@ -175,20 +185,21 @@ async function applyCombatAction(action, campaignId, attackerId, attackerName) {
 
     // Handle attacks with damage
     if (action.action === 'attack' && action.target && action.damage > 0) {
-      const target = resolveTarget(action.target, campaign.players, campaign.npcs || []);
+      const target = resolveTarget(action.target, campaignId);
       
       if (target.type !== 'unknown' && target.id) {
         if (target.type === 'player') {
           const damageResult = await combat.applyDamage(campaignId, target.id, action.damage, {
             attacker: attackerName,
-            weaponName: 'attack',
+            weaponName: action.modifierUsed ? `${action.modifierUsed} Attack` : 'attack',
             isCrit: action.critical
           });
           results.push({
             type: 'damage',
             target: target.name,
             amount: action.damage,
-            result: damageResult
+            result: damageResult,
+            rollExplanation: action.rollExplanation
           });
 
           // Award XP if target defeated
@@ -206,7 +217,7 @@ async function applyCombatAction(action, campaignId, attackerId, attackerName) {
 
     // Handle heals
     if ((action.action === 'heal' || action.action === 'spell') && action.healing > 0) {
-      const target = resolveTarget(action.target, campaign.players, campaign.npcs || []);
+      const target = resolveTarget(action.target, campaignId);
       
       if (target.type === 'player' && target.id) {
         const healResult = await combat.applyHeal(campaignId, target.id, action.healing, {
@@ -239,6 +250,7 @@ async function applyCombatAction(action, campaignId, attackerId, attackerName) {
 }
 
 module.exports = {
+  initializeCampaignContext,
   interpretCombatAction,
   resolveTarget,
   applyCombatAction

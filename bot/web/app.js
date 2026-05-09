@@ -158,22 +158,29 @@ es.addEventListener('hp.changed', e => {
 });
 
 // Voice transcription and interpretation events
+es.addEventListener('voice.campaign.initialized', e => {
+  const data = JSON.parse(e.data);
+  addEventLine(`🎤 **LISTENING STARTED**: ${data.playerCount} players, ${data.npcCount} enemies tracked`);
+});
+
 es.addEventListener('voice.transcribed', e => {
   const data = JSON.parse(e.data);
-  addEventLine(`🎤 ${data.userName}: "${data.text}"`);
+  const queueInfo = data.queuePosition > 0 ? ` [Queue #${data.queuePosition}]` : '';
+  addEventLine(`🎤 ${data.speakerIdentifier}: "${data.text}"${queueInfo}`);
 });
 
 es.addEventListener('voice.action.applied', e => {
   const data = JSON.parse(e.data);
   let msg = `✨ ${data.narrative}`;
   
-  // Add detailed result info
+  // Add detailed result info with roll explanations
   if (data.results && data.results.length > 0) {
     data.results.forEach(r => {
+      let rollInfo = r.rollExplanation ? ` (${r.rollExplanation})` : '';
       if (r.type === 'damage') {
-        msg += ` [${r.target}: -${r.amount} HP]`;
+        msg += ` [${r.target}: -${r.amount} HP${rollInfo}]`;
       } else if (r.type === 'heal') {
-        msg += ` [${r.target}: +${r.amount} HP]`;
+        msg += ` [${r.target}: +${r.amount} HP${rollInfo}]`;
       } else if (r.type === 'xp') {
         msg += ` [+${r.amount} XP]`;
       }
@@ -185,6 +192,20 @@ es.addEventListener('voice.action.applied', e => {
 es.addEventListener('voice.narrative', e => {
   const data = JSON.parse(e.data);
   addEventLine(`📖 ${data.narrative}`);
+});
+
+es.addEventListener('voice.status', e => {
+  const data = JSON.parse(e.data);
+  if (data.activeSpeakers.length > 0 || data.queueSize > 0) {
+    let status = '📊 Active: ';
+    if (data.activeSpeakers.length > 0) {
+      status += data.activeSpeakers.map(s => `${s.name} (${s.role} Lv${s.level})`).join(', ');
+    }
+    if (data.queueSize > 0) {
+      status += ` | Queue: ${data.queueSize} actions`;
+    }
+    addEventLine(status);
+  }
 });
 
 es.addEventListener('voice.error', e => {
