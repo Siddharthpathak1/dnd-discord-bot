@@ -12,21 +12,47 @@ Tavern Master is a Discord bot for running D&D sessions with campaign management
 - Starter campaign content for `Lumenreach Depths`
 - AI campaign generation, cinematic trailers, and character sheets
 - XP, inventory, quests, NPC dialogue, random encounters, session recaps, and titles
+- **Combat Automation:** Damage rolls auto-apply to HP, XP auto-awards, real-time state sync to all players
+
+## Combat Automation
+
+The bot now automatically handles combat state changes so players focus on fun, not bookkeeping:
+
+- **Damage Auto-Apply:** Roll damage with `/roll 1d6 damage:true --target @player` to instantly deduct HP
+- **HP Broadcasts:** All HP changes broadcast to the web viewer in real-time
+- **XP Auto-Award:** Use `/xp @player 100` and all players see the award and any level-ups immediately
+- **Real-Time Sync:** Damage, heals, deaths, and level-ups appear instantly on the web map viewer (no refresh needed)
+- **Death Checks:** Target HP drops to 0 → auto-applies "Unconscious" condition
+
+### Combat Automation Examples
+
+```
+/roll 1d6+3 damage:true --target @goblin    # Auto-applies 1d6+3 damage to goblin
+/roll 2d8 heal:true --target @wizard        # Auto-heals wizard for 2d8 HP
+/hp CampaignName 25 @player                 # Manually set HP, broadcasts change
+/xp CampaignName 100 @player                # Award 100 XP, broadcasts level-up if applicable
+```
+
+All state changes sync to connected web viewers via SSE (Server-Sent Events) so players see:
+- Damage/heal applied with attacker/healer names
+- HP bars updating in real-time
+- XP awards and level-ups
+- Defeat indicators
 
 ## Commands
 
 - `/create-campaign <name>` create a campaign
 - `/join-campaign <id|name>` join a campaign
 - `/role auto|choose <name?>` manage player roles
-- `/roll <expr> [mode] [campaign]` roll dice and optionally log to campaign
+- `/roll <expr> [mode] [campaign] [damage-type] [target] [is-crit]` roll dice with optional auto-damage/heal; use damage-type `damage` or `heal` with target to auto-apply
 - `/initiative <campaign> [value]` add or show initiative
 - `/initiative-advance <campaign>` advance the turn order
 - `/initiative-clear <campaign>` clear initiative
-- `/hp <campaign> [value]` set or show HP
+- `/hp <campaign> [value] [player]` set or show HP (DM can set for other players, broadcasts changes)
 - `/condition-add`, `/condition-remove`, `/condition-list`
 - `/map-create`, `/map-list`, `/map-place`, `/map-move`, `/map-remove`
 - `/ai-campaign`, `/ai-trailer`, `/ai-character`
-- `/xp`, `/inventory`, `/loot-add`, `/quest-board`, `/npc-create`, `/npc-talk`, `/random-encounter`, `/session-recap`, `/award-title`
+- `/xp [player]`, `/inventory`, `/loot-add`, `/quest-board`, `/npc-create`, `/npc-talk`, `/random-encounter`, `/session-recap`, `/award-title`
 - `/campaign-seed` seed the `Lumenreach Depths` starter campaign
 - `/how-to-play` step-by-step play guide
 - `/help-dnd` command reference
