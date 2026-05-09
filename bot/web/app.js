@@ -156,3 +156,38 @@ es.addEventListener('hp.changed', e => {
   const msg = `❤️ ${data.playerName}'s HP: ${data.previousHP} → **${data.currentHP}** (set by ${data.setBy})`;
   addEventLine(msg);
 });
+
+// Voice transcription and interpretation events
+es.addEventListener('voice.transcribed', e => {
+  const data = JSON.parse(e.data);
+  addEventLine(`🎤 ${data.userName}: "${data.text}"`);
+});
+
+es.addEventListener('voice.action.applied', e => {
+  const data = JSON.parse(e.data);
+  let msg = `✨ ${data.narrative}`;
+  
+  // Add detailed result info
+  if (data.results && data.results.length > 0) {
+    data.results.forEach(r => {
+      if (r.type === 'damage') {
+        msg += ` [${r.target}: -${r.amount} HP]`;
+      } else if (r.type === 'heal') {
+        msg += ` [${r.target}: +${r.amount} HP]`;
+      } else if (r.type === 'xp') {
+        msg += ` [+${r.amount} XP]`;
+      }
+    });
+  }
+  addEventLine(msg);
+});
+
+es.addEventListener('voice.narrative', e => {
+  const data = JSON.parse(e.data);
+  addEventLine(`📖 ${data.narrative}`);
+});
+
+es.addEventListener('voice.error', e => {
+  const data = JSON.parse(e.data);
+  addEventLine(`❌ Voice error: ${data.error}`);
+});

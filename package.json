@@ -12,6 +12,8 @@
   "license": "MIT",
   "dependencies": {
     "discord.js": "^14.11.0",
+    "@discordjs/voice": "^0.16.0",
+    "@deepgram/sdk": "^3.3.0",
     "dotenv": "^16.0.0",
     "express": "^5.2.1"
   }

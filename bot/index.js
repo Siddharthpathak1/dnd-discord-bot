@@ -20,7 +20,15 @@ if (!token || !clientId) {
   process.exit(1);
 }
 
-const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages] });
+const client = new Client({
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.DirectMessages,
+    GatewayIntentBits.GuildVoiceStates, // Required for voice channel events
+    GatewayIntentBits.MessageContent
+  ]
+});
 client.commands = new Collection();
 
 const commands = [];

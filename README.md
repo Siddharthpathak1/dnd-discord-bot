@@ -39,12 +39,73 @@ All state changes sync to connected web viewers via SSE (Server-Sent Events) so 
 - XP awards and level-ups
 - Defeat indicators
 
+## Voice Listening (AI Combat Interpretation)
+
+The bot can join your voice channel and listen to player speech, automatically interpreting combat actions and updating game state in real-time.
+
+### How It Works
+
+1. DM joins voice channel and runs `/listen start <campaign>`
+2. Bot joins and starts listening
+3. Players speak naturally: "I attack the goblin!" or "I heal the rogue!"
+4. AI interprets the speech and determines:
+   - What action was taken (attack/heal/spell/dodge)
+   - Who the target is (goblin, rogue, etc)
+   - Hit/miss and damage rolled
+   - XP rewards if enemy defeated
+5. Game state updates **automatically** — damage deducts from HP, heals restore HP, XP awarded
+6. All players see the narrative and results on the web map viewer in real-time
+7. DM runs `/listen stop <campaign>` when done
+
+### Voice Examples
+
+```
+Player 1: "I swing my sword at the goblin!"
+→ AI interprets attack, rolls 1d20 vs AC, generates 8 damage
+→ Goblin HP: 25 → 17 (automatic)
+→ All players see: "⚔️ Player 1 attacks Goblin! Damage: 8, HP: 25 → 17"
+
+Player 2: "I cast healing word on the rogue!"
+→ AI interprets healing spell, generates 10 healing
+→ Rogue HP: 5 → 15 (automatic)
+→ All players see: "✨ Healing word restores 10 HP to Rogue! HP: 5 → 15"
+
+[Goblin defeated]
+→ AI awards 100 XP to attacker
+→ All players see: "📈 Player 1 gains 100 XP! 🎉 **LEVEL UP!** Now level 5!"
+```
+
+### Voice Commands
+
+- `/listen start <campaign>` — Start listening in your current voice channel (DM only)
+- `/listen stop <campaign>` — Stop listening in a campaign (DM only)
+- `/listen status [campaign]` — Check which campaigns are listening
+
+### Voice Requirements
+
+- **DEEPGRAM_API_KEY** environment variable must be set ([Sign up for free](https://console.deepgram.com/))
+- **AI_API_KEY** for AI combat interpretation
+- Bot must have permission to join voice channels
+
+### Voice Setup
+
+1. Sign up for a free Deepgram account: https://console.deepgram.com/
+2. Copy your API key and add to `.env`:
+   ```
+   DEEPGRAM_API_KEY=your_deepgram_api_key_here
+   ```
+3. Make sure `AI_API_KEY` is set (for AI interpretation)
+4. Invite bot to your Discord server with these permissions:
+   - `CONNECT` (join voice channels)
+   - `SPEAK` (speak in voice channels)
+
 ## Commands
 
 - `/create-campaign <name>` create a campaign
 - `/join-campaign <id|name>` join a campaign
 - `/role auto|choose <name?>` manage player roles
 - `/roll <expr> [mode] [campaign] [damage-type] [target] [is-crit]` roll dice with optional auto-damage/heal; use damage-type `damage` or `heal` with target to auto-apply
+- `/listen start|stop|status [campaign]` manage voice channel listening for AI combat interpretation
 - `/initiative <campaign> [value]` add or show initiative
 - `/initiative-advance <campaign>` advance the turn order
 - `/initiative-clear <campaign>` clear initiative
@@ -82,15 +143,18 @@ npm start
 - `CLIENT_ID`
 - `GUILD_ID` or `GUILD_IDS` for fast guild-specific slash command registration
 - `PORT` (optional, defaults to 3000)
-- `AI_API_KEY` (required for AI generation)
+- `AI_API_KEY` (required for AI generation and voice interpretation)
 - `AI_BASE_URL` (optional, defaults to an OpenAI-compatible endpoint)
 - `AI_MODEL` (optional, defaults to `gpt-4o-mini`)
+- `DEEPGRAM_API_KEY` (optional but required for voice listening; get free key at https://console.deepgram.com/)
 
 If you want slash commands to appear immediately in a new server, invite the bot with both the `bot` and `applications.commands` scopes, then set `GUILD_ID` to that server ID or add it to `GUILD_IDS`. When guild IDs are set, the bot syncs commands to those guilds and clears global commands so Discord does not show duplicates. If no guild IDs are set, it falls back to global command registration.
 
 ## AI Notes
 
 The AI commands are written against an OpenAI-compatible chat-completions endpoint. If your provider uses a different base URL, set `AI_BASE_URL` to match it. The bot also has safe local fallbacks so the commands still work while you are configuring the API.
+
+Voice listening uses Deepgram for transcription and your AI provider for action interpretation. Both APIs are called in real-time during voice chat, so keep monitor your usage and costs.
 
 If you pasted a secret key into chat, rotate it before putting it into Render or `.env`.
 

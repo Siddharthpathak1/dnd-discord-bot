@@ -252,8 +252,53 @@ async function generateRecap({ campaignName, summary, recentEvents }) {
   };
 }
 
+async function generateResponse(prompt) {
+  if (!isConfigured()) {
+    return JSON.stringify({
+      action: 'unclear',
+      narrative: 'AI is not configured.'
+    });
+  }
+
+  try {
+    const response = await fetch(`${DEFAULT_BASE_URL.replace(/\/$/, '')}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${process.env.AI_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: DEFAULT_MODEL,
+        temperature: 0.7,
+        max_tokens: 500,
+        messages: [
+          { role: 'user', content: prompt }
+        ]
+      })
+    });
+
+    if (!response.ok) {
+      const message = await response.text();
+      throw new Error(`AI request failed (${response.status}): ${message}`);
+    }
+
+    const data = await response.json();
+    const content = data?.choices?.[0]?.message?.content;
+    if (!content) throw new Error('AI response was empty');
+    
+    return content;
+  } catch (err) {
+    console.error('AI generation error:', err.message);
+    return JSON.stringify({
+      action: 'unclear',
+      narrative: 'There was an error processing your request.'
+    });
+  }
+}
+
 module.exports = {
   isConfigured,
+  generateResponse,
   generateCampaign,
   generateTrailer,
   generateCharacter,
