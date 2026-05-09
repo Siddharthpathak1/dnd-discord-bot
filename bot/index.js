@@ -6,7 +6,14 @@ const db = require('../services/db');
 
 const token = process.env.DISCORD_TOKEN;
 const clientId = process.env.CLIENT_ID;
-const guildId = process.env.GUILD_ID;
+const guildIds = Array.from(
+  new Set(
+    [process.env.GUILD_ID, process.env.GUILD_IDS]
+      .flatMap(value => (value ? value.split(',') : []))
+      .map(value => value.trim())
+      .filter(Boolean)
+  )
+);
 
 if (!token || !clientId) {
   console.error('Please set DISCORD_TOKEN and CLIENT_ID in .env');
@@ -31,15 +38,19 @@ if (fs.existsSync(commandsPath)) {
 }
 
 async function registerCommands() {
-  if (!guildId) {
-    console.log('GUILD_ID not set; skipping guild command registration. Use global registration if needed.');
-    return;
-  }
   const rest = new REST({ version: '10' }).setToken(token);
   try {
-    console.log('Registering application (/) commands to guild', guildId);
-    await rest.put(Routes.applicationGuildCommands(clientId, guildId), { body: commands });
-    console.log('Commands registered.');
+    if (guildIds.length > 0) {
+      for (const guildId of guildIds) {
+        console.log('Registering application (/) commands to guild', guildId);
+        await rest.put(Routes.applicationGuildCommands(clientId, guildId), { body: commands });
+      }
+      console.log('Guild commands registered.');
+    }
+
+    console.log('Registering global application (/) commands');
+    await rest.put(Routes.applicationCommands(clientId), { body: commands });
+    console.log('Global commands registered.');
   } catch (err) {
     console.error('Error registering commands', err);
   }

@@ -54,11 +54,13 @@ npm start
 
 - `DISCORD_TOKEN`
 - `CLIENT_ID`
-- `GUILD_ID`
+- `GUILD_ID` or `GUILD_IDS` for fast guild-specific slash command registration
 - `PORT` (optional, defaults to 3000)
 - `AI_API_KEY` (required for AI generation)
 - `AI_BASE_URL` (optional, defaults to an OpenAI-compatible endpoint)
 - `AI_MODEL` (optional, defaults to `gpt-4o-mini`)
+
+If you want slash commands to appear immediately in a new server, invite the bot with both the `bot` and `applications.commands` scopes, then set `GUILD_ID` to that server ID or add it to `GUILD_IDS`. Global commands are also synced at startup, but Discord can take longer to propagate them.
 
 ## AI Notes
 
@@ -118,6 +120,8 @@ flyctl apps create my-dnd-bot
 ```bash
 flyctl secrets set DISCORD_TOKEN=your_token CLIENT_ID=your_client_id GUILD_ID=your_guild_id
 ```
+
+If you want to register commands to multiple servers, use `GUILD_IDS` with a comma-separated list of guild IDs.
 
 4. Deploy using the provided `Dockerfile`:
 
