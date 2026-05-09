@@ -24,9 +24,7 @@ const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.DirectMessages,
-    GatewayIntentBits.GuildVoiceStates, // Required for voice channel events
-    GatewayIntentBits.MessageContent
+    GatewayIntentBits.DirectMessages
   ]
 });
 client.commands = new Collection();
