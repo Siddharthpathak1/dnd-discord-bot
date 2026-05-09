@@ -114,3 +114,45 @@ es.addEventListener('initiative.updated', e => {
   addEventLine(`Initiative updated for campaign ${data.campaignId}`);
   if (currentCampaign && data.campaignId === currentCampaign) renderInitiative(data);
 });
+
+// Combat automation events
+es.addEventListener('damage.applied', e => {
+  const data = JSON.parse(e.data);
+  const dmg = data.isCriticalHit ? `🎯 CRIT!` : '⚔️';
+  const msg = `${dmg} ${data.attackerName} deals ${data.damageAmount} damage to ${data.targetName}! HP: ${data.previousHP} → ${data.currentHP}`;
+  addEventLine(msg);
+  if (data.isDefeated) {
+    addEventLine(`💀 ${data.targetName} has been defeated!`);
+  }
+});
+
+es.addEventListener('heal.applied', e => {
+  const data = JSON.parse(e.data);
+  const msg = `✨ ${data.healer} heals ${data.targetName} for ${data.healAmount} HP! HP: ${data.previousHP} → ${data.currentHP}`;
+  addEventLine(msg);
+});
+
+es.addEventListener('xp.awarded', e => {
+  const data = JSON.parse(e.data);
+  let msg = `📈 ${data.playerName} gains ${data.xpAwarded} XP! (${data.currentXP} total)`;
+  if (data.leveledUp) {
+    msg += ` 🎉 **LEVEL UP!** Now level ${data.newLevel}!`;
+  }
+  addEventLine(msg);
+});
+
+es.addEventListener('player.levelup', e => {
+  const data = JSON.parse(e.data);
+  addEventLine(`🎉 **${data.playerName} reached level ${data.newLevel}!**`);
+});
+
+es.addEventListener('player.defeated', e => {
+  const data = JSON.parse(e.data);
+  addEventLine(`💀 ${data.playerName} has been defeated by ${data.defeatedBy}!`);
+});
+
+es.addEventListener('hp.changed', e => {
+  const data = JSON.parse(e.data);
+  const msg = `❤️ ${data.playerName}'s HP: ${data.previousHP} → **${data.currentHP}** (set by ${data.setBy})`;
+  addEventLine(msg);
+});
